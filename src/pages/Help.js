@@ -35,12 +35,12 @@ function Help() {
           {/* User Profile */}
           <div className="flex items-center p-4 border-b border-gray-700">
             <div>
-              <h2 className="text-xl font-bold">Admin</h2>
+              <h2 className="text-xl font-bold">{email}</h2>
             </div>
           </div>
 
-           {/* Navigation Buttons */}
-           <div className="flex-1 p-4">
+          {/* Navigation Buttons */}
+          <div className="flex-1 p-4">
             <ul>
               <li className="mb-2 flex items-center">
                 <img src={dashboard} alt="Dashboard" className="mr-2 w-8 h-8" />
@@ -140,7 +140,55 @@ function Help() {
 
         <main className="flex-1 p-6">
           <div className="home-container flex flex-col justify-center items-center h-full bg-gray-300">
-            <h1 className="text-4xl font-bold">Help</h1>
+            <h1 className="text-4xl font-bold mb-6">Help</h1>
+            <section className="bg-white p-6 rounded shadow-md w-full max-w-xl">
+              <h2 className="text-2xl font-bold mb-4">When to Call the Police</h2>
+              <p className="mb-4">
+                Call the police if you witness or are involved in any of the following situations:
+              </p>
+              <ul className="list-disc pl-6 mb-4">
+                <li>Criminal activity, such as theft, assault, or vandalism</li>
+                <li>Suspicious behavior or persons</li>
+                <li>Domestic violence or abuse</li>
+                <li>Car accidents with injuries or major damage</li>
+                <li>Any emergency situation requiring immediate assistance</li>
+              </ul>
+
+              <h2 className="text-2xl font-bold mb-4">Safety Tips</h2>
+              <ul className="list-disc pl-6 mb-4">
+                <li>Always be aware of your surroundings and report anything unusual.</li>
+                <li>Keep emergency numbers saved in your phone.</li>
+                <li>If you feel threatened, do not hesitate to contact authorities.</li>
+                <li>Lock your doors and windows, even when at home.</li>
+                <li>Avoid sharing personal information with strangers.</li>
+              </ul>
+
+              <h2 className="text-2xl font-bold mb-4">How to Report an Incident</h2>
+              <p className="mb-4">
+                When reporting an incident, provide as much detail as possible, including:
+              </p>
+              <ul className="list-disc pl-6 mb-4">
+                <li>Your name and contact information</li>
+                <li>The exact location of the incident</li>
+                <li>A description of the people involved</li>
+                <li>The nature of the incident (what happened, when, and how)</li>
+                <li>Any immediate danger or injuries</li>
+              </ul>
+
+              <h2 className="text-2xl font-bold mb-4">Important Contacts</h2>
+              <p className="mb-4">
+                Make sure you know how to reach your local police station and other emergency services:
+              </p>
+              <ul className="list-disc pl-6 mb-4">
+                <li>Police: (084) 823-1656</li>
+                <li>Fire Station: (084) 823-1773</li>
+                <li>Emergency Rescue: (084) 822-1198</li>
+              </ul>
+
+              <p className="text-lg">
+                Stay safe, and don't hesitate to reach out to the police or other authorities if you need help.
+              </p>
+            </section>
           </div>
         </main>
       </div>
