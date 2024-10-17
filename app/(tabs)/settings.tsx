@@ -5,43 +5,32 @@ import Icon from 'react-native-vector-icons/FontAwesome'; // Import the icon lib
 export default function Profile() {
     // Handler functions for each button (you can replace these with your navigation logic)
     const handleFeedback = () => {
-        // Add navigation logic for feedback
         console.log('Feedback clicked');
     };
 
     const handleChangePassword = () => {
-        // Add navigation logic for changing password
         console.log('Change Password clicked');
     };
 
     const handleLog = () => {
-        // Add navigation logic for log
         console.log('Log clicked');
     };
 
     const handleLogout = () => {
-        // Add navigation logic for logout
         console.log('Log Out clicked');
     };
 
     const handleEditProfile = () => {
-        // Add navigation logic for editing profile
         console.log('Edit Profile clicked');
     };
 
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>This is Profile</Text>
+                <Text style={styles.title}>Profile</Text>
+                {/* You can add an icon here if needed */}
+                {/* <Icon name="user" size={50} style={styles.icon} /> */}
             </View>
-
-            {/* Large Icon */}
-            <Icon name="user-circle" size={100} color="#007bff" style={styles.icon} />
-
-            {/* Edit Profile Button */}
-            <TouchableOpacity onPress={handleEditProfile} style={styles.editButton}>
-                <Text style={styles.editButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
 
             <View style={styles.footer}>
                 <TouchableOpacity onPress={handleFeedback} style={styles.button}>
@@ -65,7 +54,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'flex-start', // Align items to the top
-        alignItems: 'center',
+        alignItems: 'center', // Center items horizontally
         padding: 16,
         backgroundColor: '#f9f9f9',
     },
@@ -79,33 +68,19 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         textAlign: 'center', // Center the text
     },
-    icon: {
-        marginVertical: 20, // Space between icon and edit button
-    },
-    editButton: {
-        backgroundColor: '#007bff',
-        padding: 12,
-        borderRadius: 5,
-        marginBottom: 20,
-    },
-    editButtonText: {
-        color: '#fff',
-        textAlign: 'center',
-        fontSize: 16,
-    },
     footer: {
         position: 'absolute',
         bottom: 20,
-        left: 20,
-        right: 20,
-        alignItems: 'flex-start',
+        left: 0,
+        right: 0,
+        alignItems: 'center', // Center the buttons
     },
     button: {
         backgroundColor: '#007bff',
         padding: 12,
         borderRadius: 5,
         marginBottom: 10,
-        width: '100%',
+        width: '80%', // Adjust width to make the buttons not full width
     },
     buttonText: {
         color: '#fff',
