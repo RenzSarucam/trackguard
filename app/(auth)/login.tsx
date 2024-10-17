@@ -56,6 +56,9 @@ export default function Login() {
             <TouchableOpacity style={styles.button} onPress={handleLogin}>
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.button} onPress = {() => router.push('/home')}>
+                <Text style={styles.buttonText}>Login Test</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity style={styles.signupLink} onPress={() => router.push('/signup')}>
                 <Text style={styles.signupText}>Don't have an account? Sign up here</Text>

@@ -1,13 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { useRouter } from 'expo-router';
 
 const Home = () => {
     const profileImageUrl = null; // This can be a URL or null if no profile picture is available
-
-    const handleEditProfile = () => {
-        // Handle the button press (navigate to edit profile screen, etc.)
-        console.log('Edit Profile pressed');
-    };
+    const router = useRouter();
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -19,7 +16,8 @@ const Home = () => {
                 />
                 <Text style={styles.subtitle}>Renz Carljansen Sarucam</Text>
             </View>
-            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
+
+            <TouchableOpacity style={styles.button} onPress={() => router.push("/edit-profile")}>
                 <Text style={styles.buttonText}>Edit Profile</Text>
             </TouchableOpacity>
 
