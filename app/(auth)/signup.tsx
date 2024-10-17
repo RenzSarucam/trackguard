@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router'; // Import useRouter
+import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc } from 'firebase/firestore';
+import { auth, db } from '../../config/firebaseConfig';
 
 const SignUp = () => {
-    // Define state for form fields
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [age, setAge] = useState('');
@@ -11,11 +13,13 @@ const SignUp = () => {
     const [address, setAddress] = useState('');
     const [contactNumber, setContactNumber] = useState('');
     const [relativeContactNumber, setRelativeContactNumber] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const router = useRouter(); // Initialize router
+    const router = useRouter();
 
-    // Handle form submission
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (
             !firstName ||
             !lastName ||
@@ -23,20 +27,42 @@ const SignUp = () => {
             !gender ||
             !address ||
             !contactNumber ||
-            !relativeContactNumber
+            !relativeContactNumber ||
+            !email ||
+            !password
         ) {
             Alert.alert('Error', 'All fields are required.');
             return;
         }
 
-        // You can perform further validation or data submission here
+        setLoading(true);
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
 
-        Alert.alert('Success', 'Sign-up successful!', [
-            {
-                text: 'OK',
-                onPress: () => router.push('/login'), // Navigate to the Login screen
-            },
-        ]);
+            await setDoc(doc(db, 'users', user.uid), {
+                firstName,
+                lastName,
+                age,
+                gender,
+                address,
+                contactNumber,
+                relativeContactNumber,
+                email,
+            });
+
+            Alert.alert('Success', 'Sign-up successful!', [
+                {
+                    text: 'OK',
+                    onPress: () => router.push('/login'),
+                },
+            ]);
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Error', 'Something went wrong');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -95,7 +121,28 @@ const SignUp = () => {
                 keyboardType="phone-pad"
             />
 
-            <Button title="Sign Up" onPress={handleSubmit} />
+            <TextInput
+                style={styles.input}
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none" // To avoid capitalizing the first letter
+            />
+
+            <TextInput
+                style={styles.input}
+                placeholder="Password"
+                secureTextEntry
+                value={password}
+                onChangeText={setPassword}
+            />
+
+            {loading ? (
+                <ActivityIndicator size="large" color="#0e4483" style={styles.loadingIndicator} />
+            ) : (
+                <Button title="Sign Up" onPress={handleSubmit} color="#0e4483" />
+            )}
         </ScrollView>
     );
 };
@@ -106,12 +153,14 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 20,
         justifyContent: 'center',
+        backgroundColor: '#ffffff', // Added background color for better readability
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
         marginBottom: 20,
         textAlign: 'center',
+        color: '#0e4483', // Added title color to match the theme
     },
     input: {
         height: 50,
@@ -120,6 +169,9 @@ const styles = StyleSheet.create({
         borderRadius: 5,
         paddingHorizontal: 10,
         marginBottom: 15,
+    },
+    loadingIndicator: {
+        marginVertical: 20, // Added margin for better spacing
     },
 });
 

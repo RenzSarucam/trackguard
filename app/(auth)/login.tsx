@@ -1,17 +1,36 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../../config/firebaseConfig';
+import { FirebaseError } from 'firebase/app';
 
 export default function Login() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    const handleLogin = () => {
-        // Here you would normally call Firebase or another auth service to handle login
-        console.log("Login with:", email, password);
-        // After successful login, navigate to home/dashboard
-        router.push("/home");
+    const handleLogin = async () => {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            router.push("/home");
+        } catch (error) {
+            console.error(error);
+
+            if (error instanceof FirebaseError) {
+                if (error.code === 'auth/user-not-found') {
+                    Alert.alert('Login Error', 'No user found with this email. Please sign up first.');
+                } else if (error.code === 'auth/wrong-password') {
+                    Alert.alert('Login Error', 'Incorrect password. Please try again.');
+                } else {
+                    Alert.alert('Login Error', error.message);
+                }
+            } else if (error instanceof Error) {
+                Alert.alert('Login Error', error.message);
+            } else {
+                Alert.alert('Login Error', 'An unknown error occurred.');
+            }
+        }
     };
 
     return (
@@ -23,6 +42,7 @@ export default function Login() {
                 placeholder="Email"
                 value={email}
                 onChangeText={setEmail}
+                autoCapitalize="none" 
             />
 
             <TextInput
