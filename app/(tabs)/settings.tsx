@@ -1,9 +1,12 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import the icon library
+import { useRouter } from 'expo-router'; // Import useRouter from expo-router
+import { auth } from '../../config/firebaseConfig'; // Make sure to import your Firebase config
 
 export default function Profile() {
-    
+    const router = useRouter(); // Get router object from expo-router
+
     const handleFeedback = () => {
         console.log('Feedback clicked');
     };
@@ -16,8 +19,14 @@ export default function Profile() {
         console.log('Log clicked');
     };
 
-    const handleLogout = () => {
-        console.log('Log Out clicked');
+    const handleLogout = async () => {
+        try {
+            await auth.signOut(); // Sign out the user
+            console.log('Log Out clicked');
+            router.push('/login'); // Navigate to the Login screen
+        } catch (error) {
+            console.error('Error logging out:', error);
+        }
     };
 
     const handleEditProfile = () => {
