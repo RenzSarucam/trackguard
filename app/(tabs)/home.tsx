@@ -1,31 +1,72 @@
-import React from 'react';
+// app/(tabs)/home.tsx
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { getDatabase, ref, onValue } from 'firebase/database';
+import { auth } from '../../config/firebaseConfig';
 
 const Home = () => {
-    const profileImageUrl = null; // This can be a URL or null if no profile picture is available
+    const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+    const [userName, setUserName] = useState<string>(''); // State for the user's name
+    const [locationData, setLocationData] = useState<string>(''); // State for location data
     const router = useRouter();
+
+    useEffect(() => {
+        const userId = auth.currentUser?.uid; 
+        console.log('User ID:', userId); // Debugging log
+
+        // Check if the user is logged in
+        if (userId) {
+            const db = getDatabase();
+            const userRef = ref(db, 'users/' + userId);
+            onValue(userRef, (snapshot) => {
+                const userData = snapshot.val();
+                console.log('User data:', userData);
+
+                if (userData) {
+                    setProfileImageUrl(userData.profilePic || null);
+                    setUserName(`${userData.firstName} ${userData.lastName}`.trim());
+                } else {
+                    console.log('User data is incomplete or does not exist.');
+                }
+            });
+
+            // Simulate fetching location data (replace this with real data fetching)
+            const currentLocation = `Current Location: Lat 12.34, Lon 56.78`;
+            const currentDateTime = new Date().toLocaleString();
+            setLocationData(`${currentLocation}\nDate and Time: ${currentDateTime}`);
+        } else {
+            console.log('User is not authenticated.');
+            // Optionally navigate to the login screen if user is not authenticated
+            router.push("/(auth)/login");
+        }
+    }, [router]); // Include router as a dependency
+
+    const handleEditProfile = () => {
+        // Navigate to the edit profile screen
+        router.push("/edit-profile");
+    };
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.title}>TrackGuard</Text>
             <View style={styles.profileContainer}>
                 <Image
-                    source={profileImageUrl ? { uri: profileImageUrl } : require('../../assets/images/user.png')} // Use your local default profile image path
+                    source={profileImageUrl ? { uri: profileImageUrl } : require('../../assets/images/user.png')} // Default image
                     style={styles.profilePhoto}
                 />
-                <Text style={styles.subtitle}>Renz Carljansen Sarucam</Text>
+                <Text style={styles.subtitle}>{userName || "User Name"}</Text>
             </View>
 
-            <TouchableOpacity style={styles.button} onPress={() => router.push("/edit-profile")}>
+            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
                 <Text style={styles.buttonText}>Edit Profile</Text>
             </TouchableOpacity>
 
-            {/* Scrollable Box for Prompt Messages */}
+            {/* Scrollable Box for Location Data */}
             <View style={styles.messageBox}>
                 <ScrollView>
                     <Text style={styles.messageText}>
-                        This is a prompt message. You can scroll up and down to see more content. Add more text here to fill the space and demonstrate the scrolling functionality. Additional content goes here. Keep adding text to see the scroll effect. Remember, this area is meant for displaying prompts or messages. Continue adding more content to ensure scrolling is visible.
+                        {locationData || "No location data available."}
                     </Text>
                 </ScrollView>
             </View>
@@ -37,63 +78,63 @@ const Home = () => {
 const styles = StyleSheet.create({
     container: {
         flexGrow: 1,
-        justifyContent: 'flex-start', // Align items from the top
-        alignItems: 'center', // Center items horizontally
-        backgroundColor: '#f8f9fa', // Light background color
-        padding: 20, // Add some padding to the container
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        backgroundColor: '#f8f9fa',
+        padding: 20,
     },
     title: {
         fontSize: 24,
         fontWeight: 'bold',
-        marginBottom: 30, // Space between title and subtitle
+        marginBottom: 30,
     },
     profileContainer: {
-        flexDirection: 'row', // Arrange items in a row
-        alignItems: 'center', // Center items vertically
-        marginTop: 20, // Add space above the profile container
-        marginBottom: 20, // Space below the profile container
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 20,
+        marginBottom: 20,
     },
     subtitle: {
         fontSize: 24,
-        color: 'black', // Grey color for subtitle
-        marginLeft: 10, // Space between profile photo and text
-        flexShrink: 1, // Allow text to shrink if it gets too long
-        textAlign: 'center', // Center the text if needed
+        color: 'black',
+        marginLeft: 10,
+        flexShrink: 1,
+        textAlign: 'center',
+        fontWeight: 'bold',
     },
     profilePhoto: {
-        width: 100, // Set width of the profile photo
-        height: 100, // Set height of the profile photo
-        borderRadius: 50, // Make it circular
+        width: 100,
+        height: 100,
+        borderRadius: 50,
     },
     button: {
-        marginTop: -20, // Adjusted space above the button
-        paddingVertical: 10, // Vertical padding for the button
-        paddingHorizontal: 20, // Horizontal padding for the button
-        backgroundColor: '#007bff', // Bootstrap primary color
-        borderRadius: 5, // Rounded corners
-        alignItems: 'center', // Center the button text
-        width: '60%', // Width of the button
-        marginLeft: 100, // Move the button slightly to the right
+        backgroundColor: '#007BFF',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 25,
+        alignItems: 'center',
+        marginBottom: 20,
     },
     buttonText: {
-        color: '#ffffff', // White text color
-        fontSize: 16, // Font size for the button text
-        textAlign: 'center', // Center the text
+        color: '#FFFFFF',
+        fontSize: 16,
     },
     messageBox: {
-        marginTop: 50, // Space above the message box
-        width: '100%', // Full width of the container
-        maxHeight: 500, // Maximum height for the message box
-        borderWidth: 0, // Border for the message box
-        borderColor: '#ccc', // Border color
-        borderRadius: 5, // Rounded corners
-        padding: 10, // Padding inside the message box
-        backgroundColor: '#87CEEB', // Sky blue color for the message box
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        padding: 15,
+        width: '100%',
+        height: 100,
+        marginBottom: 20,
+        elevation: 5, // Add shadow for Android
+        shadowColor: '#000', 
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
     messageText: {
-        fontSize: 16, // Font size for the message text
-        color: '#333', // Dark color for text
-        marginBottom: 10, // Space between messages
+        fontSize: 16,
+        lineHeight: 24,
     },
 });
 
