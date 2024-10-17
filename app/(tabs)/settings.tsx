@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Import the icon library
 
 export default function Profile() {
-    // Handler functions for each button (you can replace these with your navigation logic)
+    
     const handleFeedback = () => {
         console.log('Feedback clicked');
     };
@@ -27,7 +27,7 @@ export default function Profile() {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Profile</Text>
+                <Text style={styles.title}>Settings</Text>
                 {/* You can add an icon here if needed */}
                 {/* <Icon name="user" size={50} style={styles.icon} /> */}
             </View>
