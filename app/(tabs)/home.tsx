@@ -1,15 +1,17 @@
 // app/(tabs)/home.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getDatabase, ref, onValue } from 'firebase/database';
+import * as Location from 'expo-location';
 import { auth } from '../../config/firebaseConfig';
+// Removed import for non-existent locationUtils module
 
 const Home = () => {
     const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
     const [userName, setUserName] = useState<string>(''); // State for the user's name
-    const [locationData, setLocationData] = useState<string>(''); // State for location data
     const router = useRouter();
+    const [locationLogs, setLocationLogs] = useState<{ latitude: number; longitude: number; timestamp: string; }[]>([]); // Hook for location logs
 
     useEffect(() => {
         const userId = auth.currentUser?.uid; 
@@ -31,10 +33,15 @@ const Home = () => {
                 }
             });
 
-            // Simulate fetching location data (replace this with real data fetching)
-            const currentLocation = `Current Location: Lat 12.34, Lon 56.78`;
-            const currentDateTime = new Date().toLocaleString();
-            setLocationData(`${currentLocation}\nDate and Time: ${currentDateTime}`);
+            // Get location and update logs
+            Location.watchPositionAsync({ accuracy: Location.Accuracy.High, timeInterval: 5000, distanceInterval: 1 }, (location) => {
+                const userLocation = {
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude,
+                    timestamp: new Date().toLocaleString(),
+                };
+                setLocationLogs((prevLogs) => [...prevLogs, userLocation]);
+            });
         } else {
             console.log('User is not authenticated.');
             // Optionally navigate to the login screen if user is not authenticated
@@ -62,12 +69,19 @@ const Home = () => {
                 <Text style={styles.buttonText}>Edit Profile</Text>
             </TouchableOpacity>
 
-            {/* Scrollable Box for Location Data */}
+            {/* Scrollable Box for Location Logs */}
             <View style={styles.messageBox}>
                 <ScrollView>
-                    <Text style={styles.messageText}>
-                        {locationData || "No location data available."}
-                    </Text>
+                    {locationLogs.length > 0 ? (
+                        locationLogs.map((log: { latitude: number; longitude: number; timestamp: string }, index: number) => (
+                            <Text key={index} style={styles.messageText}>
+                                Location: Lat {log.latitude}, Lon {log.longitude}
+                                {'\n'}Date and Time: {log.timestamp}
+                            </Text>
+                        ))
+                    ) : (
+                        <Text style={styles.messageText}>No location data available.</Text>
+                    )}
                 </ScrollView>
             </View>
         </ScrollView>
@@ -125,7 +139,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         padding: 15,
         width: '100%',
-        height: 100,
+        height: 200,
         marginBottom: 20,
         elevation: 5, // Add shadow for Android
         shadowColor: '#000', 
@@ -137,6 +151,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         lineHeight: 24,
         color: '#C0C8CA',
+        marginBottom: 10,
     },
 });
 
