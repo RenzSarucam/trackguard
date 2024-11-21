@@ -130,7 +130,7 @@ export default function MapScreen() {
                         />
                         <Circle
                             center={location}
-                            radius={USER_RADIUS_KM * 1000} // 1 km radius around user location
+                            radius={USER_RADIUS_KM *50} // 1 km radius around user location
                             strokeColor="rgba(255, 0, 0, 0.5)"
                             fillColor="rgba(255, 0, 0, 0.1)"
                         />

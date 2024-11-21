@@ -2,10 +2,9 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { getDatabase, ref, onValue } from 'firebase/database';
+import { getDatabase, ref, onValue, set } from 'firebase/database';
 import * as Location from 'expo-location';
 import { auth } from '../../config/firebaseConfig';
-// Removed import for non-existent locationUtils module
 
 const Home = () => {
     const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
@@ -14,7 +13,7 @@ const Home = () => {
     const [locationLogs, setLocationLogs] = useState<{ latitude: number; longitude: number; timestamp: string; }[]>([]); // Hook for location logs
 
     useEffect(() => {
-        const userId = auth.currentUser?.uid; 
+        const userId = auth.currentUser?.uid;
         console.log('User ID:', userId); // Debugging log
 
         // Check if the user is logged in
@@ -31,6 +30,8 @@ const Home = () => {
                 } else {
                     console.log('User data is incomplete or does not exist.');
                 }
+            }, {
+                onlyOnce: true
             });
 
             // Get location and update logs
@@ -40,7 +41,17 @@ const Home = () => {
                     longitude: location.coords.longitude,
                     timestamp: new Date().toLocaleString(),
                 };
-                setLocationLogs((prevLogs) => [...prevLogs, userLocation]);
+                setLocationLogs((prevLogs) => {
+                    const updatedLogs = [...prevLogs, userLocation];
+                    // Save location data to Firebase
+                    if (userId) {
+                        const locationRef = ref(db, `users/${userId}/locationLogs`);
+                        set(locationRef, updatedLogs).catch((error) => {
+                            console.error('Error saving location data to Firebase:', error);
+                        });
+                    }
+                    return updatedLogs;
+                });
             });
         } else {
             console.log('User is not authenticated.');
@@ -54,6 +65,10 @@ const Home = () => {
         router.push("/edit-profile");
     };
 
+    const handleSendReport = () => {
+        Alert.alert('Report Sent', 'Your location has been sent to the police.');
+    };                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
+51
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <Text style={styles.title}>TrackGuard</Text>
@@ -67,6 +82,10 @@ const Home = () => {
 
             <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
                 <Text style={styles.buttonText}>Edit Profile</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.button} onPress={handleSendReport}>
+                <Text style={styles.buttonText}>Send Report to Police</Text>
             </TouchableOpacity>
 
             {/* Scrollable Box for Location Logs */}
