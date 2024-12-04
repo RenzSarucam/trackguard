@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import {
+    View,
+    StyleSheet,
+    Text,
+    ActivityIndicator,
+    Alert,
+    TextInput,
+    TouchableOpacity,
+    ScrollView,
+} from 'react-native';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 
@@ -8,7 +17,8 @@ const DAVAO_CITY_COORDS = {
     longitude: 125.6128,
 };
 const RADIUS_KM = 10; // 10 km radius around Davao City
-const USER_RADIUS_KM = 1; // 1 km radius around user location
+const USER_RADIUS_KM = 0.070; // 250 meters radius around user location
+
 
 type UserLocation = {
     latitude: number;
@@ -21,6 +31,7 @@ export default function MapScreen() {
     const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
     const [locationLogs, setLocationLogs] = useState<UserLocation[]>([]);
+    const [searchQuery, setSearchQuery] = useState<string>('');
 
     useEffect(() => {
         const requestLocationPermission = async () => {
@@ -86,9 +97,9 @@ export default function MapScreen() {
         const a =
             Math.sin(dLat / 2) * Math.sin(dLat / 2) +
             Math.cos(deg2rad(lat1)) *
-                Math.cos(deg2rad(lat2)) *
-                Math.sin(dLon / 2) *
-                Math.sin(dLon / 2);
+            Math.cos(deg2rad(lat2)) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         const distance = R * c; // Distance in km
         return distance;
@@ -98,12 +109,46 @@ export default function MapScreen() {
         return deg * (Math.PI / 180);
     };
 
+    const handleSearch = () => {
+        const coords = searchQuery.split(',').map((s) => s.trim());
+
+        if (coords.length === 2) {
+            const latitude = parseFloat(coords[0]);
+            const longitude = parseFloat(coords[1]);
+
+            if (!isNaN(latitude) && !isNaN(longitude)) {
+                const timestamp = new Date().toLocaleString();
+                const userLocation = {
+                    latitude,
+                    longitude,
+                    timestamp,
+                };
+                setLocation(userLocation);
+                setLocationLogs((prevLogs) => [...prevLogs, userLocation]);
+                checkDistanceFromDavao(userLocation);
+            } else {
+                alert('Invalid coordinates. Please enter valid latitude and longitude.');
+            }
+        } else {
+            alert('Please enter coordinates in the format: "latitude, longitude"');
+        }
+    };
+
     return (
         <View style={styles.container}>
             {loading ? (
                 <ActivityIndicator size="large" color="#0000ff" />
             ) : location ? (
                 <>
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Enter Latitude, Longitude"
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                    />
+                    <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+                        <Text style={styles.searchButtonText}>Search</Text>
+                    </TouchableOpacity>
                     <MapView
                         provider={PROVIDER_GOOGLE} // Use Google Maps provider
                         style={styles.map}
@@ -130,7 +175,7 @@ export default function MapScreen() {
                         />
                         <Circle
                             center={location}
-                            radius={USER_RADIUS_KM *50} // 1 km radius around user location
+                            radius={USER_RADIUS_KM * 1000} // 1 km radius around user location
                             strokeColor="rgba(255, 0, 0, 0.5)"
                             fillColor="rgba(255, 0, 0, 0.1)"
                         />
@@ -163,9 +208,31 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '60%',
     },
+    searchInput: {
+        position: 'absolute',
+        top: 10,
+        width: '80%',
+        height: 40,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        zIndex: 1,
+    },
+    searchButton: {
+        position: 'absolute',
+        top: 60,
+        backgroundColor: '#007BFF',
+        padding: 10,
+        borderRadius: 8,
+        zIndex: 1,
+    },
+    searchButtonText: {
+        color: 'white',
+        fontWeight: 'bold',
+    },
     logContainer: {
         width: '100%',
-        height: '40%',
+        height: '30%',
         backgroundColor: '#2E4156',
         padding: 10,
     },

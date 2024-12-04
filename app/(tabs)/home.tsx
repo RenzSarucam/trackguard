@@ -1,176 +1,306 @@
-// app/(tabs)/home.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Image,
+    TouchableOpacity,
+    ScrollView,
+    Alert,
+    TextInput,
+    Modal,
+    Button,
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import { getDatabase, ref, onValue, set } from 'firebase/database';
-import * as Location from 'expo-location';
+import { getDatabase, ref, onValue, set, push } from 'firebase/database';
 import { auth } from '../../config/firebaseConfig';
+import * as Location from 'expo-location';
 
 const Home = () => {
     const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
-    const [userName, setUserName] = useState<string>(''); // State for the user's name
+    const [userName, setUserName] = useState<string>('User Name');
+    const [locationLogs, setLocationLogs] = useState<
+        { latitude: number; longitude: number; timestamp: string }[]
+    >([]);
+    const [isModalVisible, setModalVisible] = useState(false);
+    const [customMessage, setCustomMessage] = useState('');
     const router = useRouter();
-    const [locationLogs, setLocationLogs] = useState<{ latitude: number; longitude: number; timestamp: string; }[]>([]); // Hook for location logs
 
     useEffect(() => {
-        const userId = auth.currentUser?.uid;
-        console.log('User ID:', userId); // Debugging log
+        const fetchUserDataAndStartTracking = async () => {
+            const userId = auth.currentUser?.uid;
 
-        // Check if the user is logged in
-        if (userId) {
+            if (!userId) {
+                Alert.alert('Error', 'You are not logged in. Redirecting to login.');
+                router.push('/(auth)/login');
+                return;
+            }
+
             const db = getDatabase();
-            const userRef = ref(db, 'users/' + userId);
+            const userRef = ref(db, `users/${userId}`);
+
+            // Fetch user data
             onValue(userRef, (snapshot) => {
                 const userData = snapshot.val();
-                console.log('User data:', userData);
-
                 if (userData) {
                     setProfileImageUrl(userData.profilePic || null);
-                    setUserName(`${userData.firstName} ${userData.lastName}`.trim());
-                } else {
-                    console.log('User data is incomplete or does not exist.');
+                    setUserName(
+                        `${userData.firstName || ''} ${userData.lastName || ''}`.trim()
+                    );
                 }
-            }, {
-                onlyOnce: true
             });
 
-            // Get location and update logs
-            Location.watchPositionAsync({ accuracy: Location.Accuracy.High, timeInterval: 5000, distanceInterval: 1 }, (location) => {
-                const userLocation = {
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                    timestamp: new Date().toLocaleString(),
-                };
-                setLocationLogs((prevLogs) => {
-                    const updatedLogs = [...prevLogs, userLocation];
-                    // Save location data to Firebase
-                    if (userId) {
-                        const locationRef = ref(db, `users/${userId}/locationLogs`);
-                        set(locationRef, updatedLogs).catch((error) => {
-                            console.error('Error saving location data to Firebase:', error);
-                        });
-                    }
-                    return updatedLogs;
-                });
-            });
-        } else {
-            console.log('User is not authenticated.');
-            // Optionally navigate to the login screen if user is not authenticated
-            router.push("/(auth)/login");
-        }
-    }, [router]); // Include router as a dependency
+            // Request location permissions
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert(
+                    'Permission Denied',
+                    'Location permissions are required for tracking.'
+                );
+                return;
+            }
+
+            // Track user location
+            Location.watchPositionAsync(
+                {
+                    accuracy: Location.Accuracy.High,
+                    timeInterval: 5000,
+                    distanceInterval: 1,
+                },
+                (location) => {
+                    const userLocation = {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        timestamp: new Date().toLocaleString(),
+                    };
+
+                    setLocationLogs((prevLogs) => {
+                        const updatedLogs = [...prevLogs, userLocation];
+                        const locationRef = ref(
+                            db,
+                            `users/${userId}/locationLogs`
+                        );
+                        set(locationRef, updatedLogs).catch((error) =>
+                            console.error('Error saving location:', error)
+                        );
+                        return updatedLogs;
+                    });
+                }
+            );
+        };
+
+        fetchUserDataAndStartTracking();
+    }, [router]);
 
     const handleEditProfile = () => {
-        // Navigate to the edit profile screen
-        router.push("/edit-profile");
+        router.push('../device/edit-profile');
     };
 
     const handleSendReport = () => {
-        Alert.alert('Report Sent', 'Your location has been sent to the police.');
-    };                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
-51
+        if (locationLogs.length === 0) {
+            Alert.alert('Error', 'No location data available to send.');
+            return;
+        }
+
+        const db = getDatabase();
+        const reportRef = ref(db, 'reports');
+        const latestLocation = locationLogs[locationLogs.length - 1];
+        const reportData = {
+            message: customMessage || 'I need help!',
+            location: latestLocation,
+            timestamp: new Date().toISOString(),
+        };
+
+        push(reportRef, reportData)
+            .then(() => {
+                Alert.alert('Report Sent', 'Your location has been sent to the police.');
+                setCustomMessage('');
+                setModalVisible(false);
+            })
+            .catch((error) => {
+                Alert.alert('Error', 'Failed to send the report.');
+                console.error(error);
+            });
+    };
+
+    const openReportModal = () => {
+        setModalVisible(true);
+    };
+
+    const closeReportModal = () => {
+        setModalVisible(false);
+        setCustomMessage('');
+    };
+
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>TrackGuard</Text>
-            <View style={styles.profileContainer}>
+        <View style={styles.container}>
+            <View style={styles.card}>
                 <Image
-                    source={profileImageUrl ? { uri: profileImageUrl } : require('../../assets/images/user.png')} // Default image
-                    style={styles.profilePhoto}
+                    source={
+                        profileImageUrl
+                            ? { uri: profileImageUrl }
+                            : require('../../assets/images/user.png')
+                    }
+                    style={styles.profileImage}
                 />
-                <Text style={styles.subtitle}>{userName || "User Name"}</Text>
+                <Text style={styles.userName}>{userName}</Text>
+
+                <View style={styles.buttonsContainer}>
+                    <TouchableOpacity
+                        style={styles.editProfileButton}
+                        onPress={handleEditProfile}
+                    >
+                        <Text style={styles.buttonText}>Edit Profile</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.reportButton}
+                        onPress={openReportModal}
+                    >
+                        <Text style={styles.buttonText}>Report to Police</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
 
-            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-                <Text style={styles.buttonText}>Edit Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.button} onPress={handleSendReport}>
-                <Text style={styles.buttonText}>Send Report to Police</Text>
-            </TouchableOpacity>
-
-            {/* Scrollable Box for Location Logs */}
-            <View style={styles.messageBox}>
+            <View style={styles.locationLogsBox}>
                 <ScrollView>
                     {locationLogs.length > 0 ? (
-                        locationLogs.map((log: { latitude: number; longitude: number; timestamp: string }, index: number) => (
-                            <Text key={index} style={styles.messageText}>
+                        locationLogs.map((log, index) => (
+                            <Text key={index} style={styles.locationLogText}>
                                 Location: Lat {log.latitude}, Lon {log.longitude}
-                                {'\n'}Date and Time: {log.timestamp}
+                                {'\n'}Timestamp: {log.timestamp}
                             </Text>
                         ))
                     ) : (
-                        <Text style={styles.messageText}>No location data available.</Text>
+                        <Text style={styles.locationLogText}>
+                            No location data available.
+                        </Text>
                     )}
                 </ScrollView>
             </View>
-        </ScrollView>
+
+            {/* Modal for custom message */}
+            <Modal
+                visible={isModalVisible}
+                transparent={true}
+                animationType="slide"
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Report to Police</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter your message"
+                            value={customMessage}
+                            onChangeText={setCustomMessage}
+                        />
+                        <View style={styles.modalButtons}>
+                            <Button title="Cancel" onPress={closeReportModal} />
+                            <Button title="Send" onPress={handleSendReport} />
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+        </View>
     );
 };
 
-// Styles for the component
 const styles = StyleSheet.create({
     container: {
-        flexGrow: 1,
+        flex: 1,
         justifyContent: 'flex-start',
         alignItems: 'center',
         backgroundColor: '#1A2D42',
+        paddingTop: 50,
+    },
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: 15,
         padding: 20,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#D4D8DD',
-        marginBottom: 30,
-    },
-    profileContainer: {
-        flexDirection: 'row',
+        width: 300,
         alignItems: 'center',
+        elevation: 5,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
         marginTop: 20,
-        marginBottom: 20,
     },
-    subtitle: {
-        fontSize: 24,
-        color: '#D4D8DD',
-        marginLeft: 10,
-        flexShrink: 1,
-        textAlign: 'center',
-        fontWeight: 'bold',
-    },
-    profilePhoto: {
+    profileImage: {
         width: 100,
         height: 100,
         borderRadius: 50,
+        marginBottom: 15,
     },
-    button: {
-        backgroundColor: '#AAB7B7',
-        paddingVertical: 12,
+    userName: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 20,
+    },
+    buttonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        width: '100%',
+    },
+    editProfileButton: {
+        backgroundColor: '#4CAF50',
+        paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 25,
-        alignItems: 'center',
-        marginBottom: 20,
+    },
+    reportButton: {
+        backgroundColor: '#FF5722',
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 25,
     },
     buttonText: {
-        color: '#1A2D42',
-        fontSize: 16,
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: 'bold',
+        textAlign: 'center',
     },
-    messageBox: {
-        backgroundColor: '#2E4156',
+    locationLogsBox: {
+        backgroundColor: '#e0e0e0',
         borderRadius: 8,
         padding: 15,
-        width: '100%',
+        width: '90%',
+        marginTop: 20,
         height: 200,
         marginBottom: 20,
-        elevation: 5, // Add shadow for Android
-        shadowColor: '#000', 
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
     },
-    messageText: {
+    locationLogText: {
         fontSize: 16,
-        lineHeight: 24,
-        color: '#C0C8CA',
+        color: '#333',
         marginBottom: 10,
+    },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    modalContainer: {
+        backgroundColor: 'white',
+        padding: 20,
+        borderRadius: 10,
+        width: '80%',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 15,
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#ccc',
+        borderRadius: 8,
+        padding: 10,
+        marginBottom: 15,
+    },
+    modalButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
     },
 });
 
