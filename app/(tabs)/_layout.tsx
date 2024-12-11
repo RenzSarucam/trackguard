@@ -41,6 +41,7 @@ export default function TabsLayout() {
           name="settings"
           options={{
             title: "Settings",
+            headerShown: false,
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="settings" color={color} size={size} />
             ),
