@@ -3,11 +3,14 @@ import { View, StyleSheet, Text, ActivityIndicator, Alert, TouchableOpacity } fr
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { LinearGradient } from 'expo-linear-gradient';
+import { auth, database } from '../../config/firebaseConfig';
+import { ref, set, onValue } from 'firebase/database';
 
 type UserLocation = {
     latitude: number;
     longitude: number;
     timestamp: string;
+    radius?: number;
 };
 
 export default function MapScreen() {
@@ -15,29 +18,33 @@ export default function MapScreen() {
     const [permissionGranted, setPermissionGranted] = useState<boolean>(false);
     const [loading, setLoading] = useState<boolean>(true);
     const [locationLogs, setLocationLogs] = useState<UserLocation[]>([]);
-    const [userRadiusMeters, setUserRadiusMeters] = useState<number | null>(null); // Customizable radius for user location
-    const [setPoint, setSetPoint] = useState<UserLocation | null>(null); // Set point for the 100 meters radius
+    const [userRadiusMeters, setUserRadiusMeters] = useState<number | null>(null); 
+    const [setPoint, setSetPoint] = useState<UserLocation | null>(null);
 
-    useEffect(() => {const firebaseConfig = {
-  apiKey: "AIzaSyBn9m8VH43GFrlIHN1dgBmlY-3BgdwjCDs",
-  authDomain: "track-guard.firebaseapp.com",
-  databaseURL: "https://track-guard-default-rtdb.firebaseio.com",
-  projectId: "track-guard",
-  storageBucket: "track-guard.firebasestorage.app",
-  messagingSenderId: "1024269638309",
-  appId: "1:1024269638309:web:6aea15e6899d7ea5388b4c"
-};
+    useEffect(() => {
         const requestLocationPermission = async () => {
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status === 'granted') {
                 setPermissionGranted(true);
-                await getCurrentLocation(); // Retrieve the initial location if permission is granted
+                await getCurrentLocation(); 
             } else {
                 console.log('Permission to access location was denied');
                 setPermissionGranted(false);
-                setLoading(false); // Stop loading if permissions are denied
+                setLoading(false); 
             }
         };
+
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+            const setPointRef = ref(database, `users/${userId}/setPoint`);
+            onValue(setPointRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    setSetPoint(data);
+                    setUserRadiusMeters(data.radius || 100);
+                }
+            });
+        }
 
         requestLocationPermission();
     }, []);
@@ -48,7 +55,7 @@ export default function MapScreen() {
                 const locationWatcher = await Location.watchPositionAsync(
                     {
                         accuracy: Location.Accuracy.High,
-                        distanceInterval: 1, // Check for every 1 meter change
+                        distanceInterval: 1, 
                     },
                     (newLocation) => {
                         const { latitude, longitude } = newLocation.coords;
@@ -109,7 +116,7 @@ export default function MapScreen() {
     const getDistanceFromLatLonInMeters = (
         lat1: number, lon1: number, lat2: number, lon2: number
     ) => {
-        const R = 6371000; // Radius of the earth in meters
+        const R = 6371000; 
         const dLat = deg2rad(lat2 - lat1);
         const dLon = deg2rad(lon2 - lon1);
         const a =
@@ -119,7 +126,7 @@ export default function MapScreen() {
                 Math.sin(dLon / 2) *
                 Math.sin(dLon / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        const distance = R * c; // Distance in meters
+        const distance = R * c; 
         return distance;
     };
 
@@ -127,9 +134,23 @@ export default function MapScreen() {
         return deg * (Math.PI / 180);
     };
 
+    const updateSetPoint = (newSetPoint: UserLocation) => {
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+            const setPointRef = ref(database, `users/${userId}/setPoint`);
+            set(setPointRef, {
+                ...newSetPoint,
+                radius: userRadiusMeters || 100
+            }).catch(error => {
+                console.error('Error saving set point:', error);
+            });
+        }
+    };
+
     const setMapLongPressHandler = () => {
         if (setPoint) {
             setUserRadiusMeters(100);
+            updateSetPoint({ ...setPoint, radius: 100 });
             Alert.alert('Set Radius', 'Radius has been set to 100 meters at the chosen point.');
         }
     };
@@ -154,7 +175,6 @@ export default function MapScreen() {
                 <ActivityIndicator size="large" color="#ffffff" />
             ) : location ? (
                 <View style={styles.content}>
-                    <Text style={styles.title}>Location Tracker</Text>
                     
                     <View style={styles.mapContainer}>
                         <MapView
@@ -168,7 +188,13 @@ export default function MapScreen() {
                             }}
                             onLongPress={(e: any) => {
                                 const { latitude, longitude } = e.nativeEvent.coordinate;
-                                setSetPoint({ latitude, longitude, timestamp: new Date().toLocaleString() });
+                                const newSetPoint = { 
+                                    latitude, 
+                                    longitude, 
+                                    timestamp: new Date().toLocaleString() 
+                                };
+                                setSetPoint(newSetPoint);
+                                updateSetPoint(newSetPoint);
                                 Alert.alert('Set Point', 'A new set point has been created.');
                             }}>
                             {setPoint && (
@@ -238,7 +264,7 @@ const styles = StyleSheet.create({
     },
     mapContainer: {
         height: '70%',
-        borderRadius: 12,
+        borderRadius: 4,
         overflow: 'hidden',
         marginBottom: 24,
     },

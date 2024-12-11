@@ -15,54 +15,63 @@ const Home = () => {
 
     useEffect(() => {
         const userId = auth.currentUser?.uid;
-        console.log('User ID:', userId); // Debugging log
+        if (!userId) {
+            router.push("/(auth)/login");
+            return;
+        }
 
-        // Check if the user is logged in
-        if (userId) {
-            const db = getDatabase();
-            const userRef = ref(db, 'users/' + userId);
-            onValue(userRef, (snapshot) => {
-                const userData = snapshot.val();
-                console.log('User data:', userData);
+        const db = getDatabase();
+        const userRef = ref(db, 'users/' + userId);
 
-                if (userData) {
-                    setProfileImageUrl(userData.profilePic || null);
-                    setUserName(`${userData.firstName} ${userData.lastName}`.trim());
-                } else {
-                    console.log('User data is incomplete or does not exist.');
-                }
-            }, {
-                onlyOnce: true
-            });
+        // Set up user data listener
+        const userUnsubscribe = onValue(userRef, (snapshot) => {
+            const userData = snapshot.val();
+            if (userData) {
+                setProfileImageUrl(userData.profilePic || null);
+                setUserName(`${userData.firstName} ${userData.lastName}`.trim());
+            }
+        });
 
-            // Get location and update logs
-            Location.watchPositionAsync({ accuracy: Location.Accuracy.High, timeInterval: 5000, distanceInterval: 1 }, (location) => {
-                const userLocation = {
-                    latitude: location.coords.latitude,
-                    longitude: location.coords.longitude,
-                    timestamp: new Date().toLocaleString(),
-                };
-                setLocationLogs((prevLogs) => {
-                    const updatedLogs = [...prevLogs, userLocation];
-                    // Save location data to Firebase
-                    if (userId) {
+        // Set up location watcher
+        let locationWatcher: Location.LocationSubscription | null = null;
+        const setupLocationWatcher = async () => {
+            locationWatcher = await Location.watchPositionAsync(
+                { 
+                    accuracy: Location.Accuracy.High, 
+                    timeInterval: 5000, 
+                    distanceInterval: 1 
+                },
+                (location) => {
+                    const userLocation = {
+                        latitude: location.coords.latitude,
+                        longitude: location.coords.longitude,
+                        timestamp: new Date().toLocaleString(),
+                    };
+
+                    setLocationLogs(prevLogs => {
+                        const updatedLogs = [...prevLogs, userLocation];
+                        // Save to Firebase
                         const locationRef = ref(db, `users/${userId}/locationLogs`);
                         set(locationRef, updatedLogs).catch((error) => {
-                            console.error('Error saving location data to Firebase:', error);
+                            console.error('Error saving location:', error);
                         });
-                    }
-                    return updatedLogs;
-                });
-            });
-        } else {
-            console.log('User is not authenticated.');
-            // Optionally navigate to the login screen if user is not authenticated
-            router.push("/(auth)/login");
-        }
-    }, [router]); // Include router as a dependency
+                        return updatedLogs;
+                    });
+                }
+            );
+        };
+
+        setupLocationWatcher();
+
+        return () => {
+            userUnsubscribe();
+            if (locationWatcher) {
+                locationWatcher.remove();
+            }
+        };
+    }, [router]); 
 
     const handleEditProfile = () => {
-        // Navigate to the edit profile screen
         router.push("/edit-profile");
     };
 
