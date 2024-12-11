@@ -1,83 +1,138 @@
 import React from 'react';
-import { Text, View, TouchableOpacity, StyleSheet, ImageBackground, Image } from 'react-native';
+import { Text, View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'react-native';
 
 export default function Index() {
   const router = useRouter();
 
   return (
-    <ImageBackground 
-      source={{ uri: 'https://example.com/futuristic-background.jpg' }} 
+    <LinearGradient
+      colors={['#083344', '#094155', '#0a4f66']}
       style={styles.container}
     >
-      <LinearGradient
-        colors={['#1A2D42', '#2E4156', '#AAB7B7']}
-        style={styles.gradientOverlay}
-      >
+      <View style={styles.content}>
         <Image 
           source={require('../assets/images/trackguard.png')} 
           style={styles.logo}
         />
-        <Text style={styles.headerText}>Welcome to Track Guard</Text>
+        <Text style={styles.headerText}>TrackGuard</Text>
+        <Text style={styles.descriptionText}>Your trusted companion for secure tracking</Text>
 
-        {/* Button to navigate to Login Screen */}
-        <TouchableOpacity
-          style={styles.loginButton}
-          onPress={() => {
-            router.push('/(auth)/login');
-          }}
-        >
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
-      </LinearGradient>
-    </ImageBackground>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.loginButton}
+            onPress={() => {
+              router.push('/(auth)/login');
+            }}
+          >
+            <Text style={styles.buttonText}>Log in</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.signupButton}
+            onPress={() => {
+              router.push('/(auth)/signup');
+            }}
+          >
+            <Text style={styles.signupButtonText}>Sign Up</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.legalContainer}>
+          <Text style={styles.legalText}>
+            By continuing, you agree to our{' '}
+            <Text style={styles.legalLink}>
+              Terms & Conditions
+            </Text>
+            {' '}and{' '}
+            <Text style={styles.legalLink}>
+              Privacy Policy
+            </Text>
+          </Text>
+        </View>
+      </View>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  gradientOverlay: {
+  content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    width: '100%',
-    height: '100%',
+    paddingHorizontal: 24,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
   logo: {
-    width: 150,
-    height: 150,
-    marginBottom: 30,
+    width: 120,
+    height: 120,
+    marginBottom: 32,
   },
   headerText: {
-    fontSize: 25,
-    color: '#D4D8DD',
-    marginBottom: 50,
-    fontWeight: 'bold',
-    textShadowColor: '#2E4156',
-    textShadowOffset: { width: 3, height: 3 },
-    textShadowRadius: 15,
+    fontSize: 28,
+    color: '#ffffff',  
+    marginBottom: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  descriptionText: {
+    fontSize: 16,
+    color: '#94a3b8',  
+    marginBottom: 60,
+    textAlign: 'center',
+    fontWeight: '400',
+  },
+  buttonContainer: {
+    width: '100%',
+    gap: 16,
+    marginBottom: 60,
   },
   loginButton: {
-    backgroundColor: '#2E4156',
-    paddingVertical: 18,
-    paddingHorizontal: 45,
-    borderRadius: 30,
+    backgroundColor: '#155e75',
+    paddingVertical: 16,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  signupButton: {
+    backgroundColor: 'transparent',
+    paddingVertical: 16,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#AAB7B7',
-    shadowColor: '#1A2D42',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.8,
-    shadowRadius: 20,
-    elevation: 10,
+    borderColor: '#155e75',
+  },
+  signupButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
   },
   buttonText: {
-    color: '#C0C8CA',
-    fontSize: 22,
-    fontWeight: '800',
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  legalContainer: {
+    width: '100%',
+    position: 'absolute',
+    bottom: 40,
+    paddingHorizontal: 24,
+  },
+  legalText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+  legalLink: {
+    color: '#fff',
+    textDecorationLine: 'underline',
   },
 });
