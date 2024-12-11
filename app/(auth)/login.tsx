@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../config/firebaseConfig';
 import { FirebaseError } from 'firebase/app';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function Login() {
     const router = useRouter();
@@ -34,79 +35,118 @@ export default function Login() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Login</Text>
+        <LinearGradient
+            colors={['#083344', '#094155', '#0a4f66']}
+            style={styles.container}
+        >
+            <View style={styles.content}>
+                <Text style={styles.title}>Welcome Back</Text>
+                <Text style={styles.subtitle}>Sign in to continue</Text>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#AAB7B7"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none" 
-            />
+                <View style={styles.inputContainer}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Email"
+                        placeholderTextColor="#94a3b8"
+                        value={email}
+                        onChangeText={setEmail}
+                        autoCapitalize="none"
+                    />
 
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor="#AAB7B7"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        placeholderTextColor="#94a3b8"
+                        secureTextEntry
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                </View>
 
-            <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                <Text style={styles.buttonText}>Login</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.signupLink} onPress={() => router.push('/signup')}>
-                <Text style={styles.signupText}>Don't have an account? Sign up here</Text>
-            </TouchableOpacity>
-        </View>
+                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+                    <Text style={styles.buttonText}>Login</Text>
+                </TouchableOpacity>
+
+                <View style={styles.signupContainer}>
+                    <Text style={styles.signupText}>
+                        Don't have an account?{' '}
+                        <Text 
+                            style={styles.signupLink}
+                            onPress={() => router.push('/signup')}
+                        >
+                            Sign up
+                        </Text>
+                    </Text>
+                </View>
+            </View>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    content: {
+        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        padding: 20,
-        backgroundColor: '#1A2D42',
+        paddingHorizontal: 24,
+        paddingTop: 60,
+        paddingBottom: 40,
     },
     title: {
         fontSize: 28,
-        fontWeight: 'bold',
-        color: '#D4D8DD',
-        marginBottom: 20,
+        color: '#ffffff',
+        marginBottom: 12,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#94a3b8',
+        marginBottom: 40,
+        textAlign: 'center',
+    },
+    inputContainer: {
+        width: '100%',
+        gap: 16,
+        marginBottom: 24,
     },
     input: {
         width: '100%',
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderWidth: 1,
-        borderColor: '#2E4156',
-        backgroundColor: '#2E4156',
-        color: '#D4D8DD',
-        padding: 10,
-        borderRadius: 8,
-        marginBottom: 10,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        color: '#ffffff',
+        padding: 16,
+        borderRadius: 12,
+        fontSize: 16,
     },
-    button: {
+    loginButton: {
+        backgroundColor: '#155e75',
+        paddingVertical: 16,
+        borderRadius: 12,
         width: '100%',
-        backgroundColor: '#AAB7B7',
-        padding: 15,
-        borderRadius: 8,
         alignItems: 'center',
-        marginTop: 10,
+        marginBottom: 16,
     },
     buttonText: {
-        color: '#1A2D42',
+        color: '#ffffff',
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '600',
     },
-    signupLink: {
-        marginTop: 20,
+    signupContainer: {
+        paddingVertical: 16,
+        width: '100%',
+        alignItems: 'center',
     },
     signupText: {
-        color: '#C0C8CA',
+        color: '#94a3b8',
         fontSize: 16,
+    },
+    signupLink: {
+        color: '#ffffff',
+        textDecorationLine: 'underline',
     },
 });
