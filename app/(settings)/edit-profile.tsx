@@ -1,22 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, KeyboardAvoidingView, ScrollView, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, TextInput, StyleSheet, ScrollView, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { getDatabase, ref, set, get } from 'firebase/database';
 import { auth } from '../../config/firebaseConfig';
 import { useFocusEffect } from '@react-navigation/native';
-import { useRouter } from 'expo-router'; // Import useRouter from expo-router
+import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from "@expo/vector-icons";
 
 const EditProfile = () => {
     const [profilePic, setProfilePic] = useState<string | null>(null);
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
-
-    const router = useRouter(); // Get router object from expo-router
+    const router = useRouter();
 
     useFocusEffect(
         React.useCallback(() => {
-            // Clear input fields and profile picture when the screen is focused
             const resetForm = () => {
                 setFirstName('');
                 setLastName('');
@@ -71,7 +71,6 @@ const EditProfile = () => {
                 profilePic: newProfilePic || profilePic,
             });
 
-            // Show success alert and navigate to Home after clicking OK
             Alert.alert(
                 "Profile Updated",
                 "Your profile has been updated successfully.",
@@ -79,13 +78,12 @@ const EditProfile = () => {
                     {
                         text: "OK",
                         onPress: () => {
-                            router.push('/home'); // Navigate to Home screen using expo-router
+                            router.push('/home');
                         },
                     },
                 ]
             );
 
-            // Clear input fields after saving
             setFirstName('');
             setLastName('');
             setPhoneNumber('');
@@ -96,95 +94,188 @@ const EditProfile = () => {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={styles.keyboardAvoidingView}
-            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        <LinearGradient
+            colors={['#083344', '#094155', '#0a4f66']}
+            style={styles.container}
         >
-            <ScrollView contentContainerStyle={styles.container}>
-                {profilePic ? (
-                    <Image source={{ uri: profilePic }} style={styles.profileImage} />
-                ) : (
-                    <Text style={styles.placeholderText}>No Profile Picture Selected</Text>
-                )}
-                <TouchableOpacity style={styles.button} onPress={pickImage}>
-                    <Text style={styles.buttonText}>Change Profile Picture</Text>
-                </TouchableOpacity>
+            <ScrollView 
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.header}>
+                    <Text style={styles.title}>Edit Profile</Text>
+                    <View style={styles.profileSection}>
+                        <TouchableOpacity onPress={pickImage} style={styles.imageContainer}>
+                            {profilePic ? (
+                                <Image source={{ uri: profilePic }} style={styles.profileImage} />
+                            ) : (
+                                <Image source={require('../../assets/images/user.png')} style={styles.profileImage} />
+                            )}
+                            <View style={styles.editIconContainer}>
+                                <Ionicons name="camera" size={20} color="#ffffff" />
+                            </View>
+                        </TouchableOpacity>
+                        <Text style={styles.emailText}>{auth.currentUser?.email}</Text>
+                    </View>
+                </View>
 
-                <TextInput
-                    style={styles.input}
-                    placeholder="First Name"
-                    value={firstName}
-                    onChangeText={setFirstName}
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Last Name"
-                    value={lastName}
-                    onChangeText={setLastName}
-                />
-                <TextInput
-                    style={styles.input}
-                    placeholder="Phone Number"
-                    value={phoneNumber}
-                    onChangeText={setPhoneNumber}
-                    keyboardType="phone-pad" // Allow only phone number input
-                />
-                <TouchableOpacity style={styles.saveButton} onPress={() => handleSave()}>
-                    <Text style={styles.buttonText}>Save Changes</Text>
-                </TouchableOpacity>
+                <View style={styles.formContainer}>
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>First Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter your first name"
+                            placeholderTextColor="#94a3b8"
+                            value={firstName}
+                            onChangeText={setFirstName}
+                        />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Last Name</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter your last name"
+                            placeholderTextColor="#94a3b8"
+                            value={lastName}
+                            onChangeText={setLastName}
+                        />
+                    </View>
+
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.inputLabel}>Phone Number</Text>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter your phone number"
+                            placeholderTextColor="#94a3b8"
+                            value={phoneNumber}
+                            onChangeText={setPhoneNumber}
+                            keyboardType="phone-pad"
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity 
+                        style={styles.saveButton} 
+                        onPress={() => handleSave()}
+                    >
+                        <Text style={styles.buttonText}>Save Changes</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity 
+                        style={styles.cancelButton}
+                        onPress={() => router.back()}
+                    >
+                        <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
-        </KeyboardAvoidingView>
+        </LinearGradient>
     );
 };
 
 const styles = StyleSheet.create({
-    keyboardAvoidingView: {
+    container: {
         flex: 1,
     },
-    container: {
+    content: {
         flexGrow: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 16,
+        paddingHorizontal: 24,
+        paddingTop: 90,
+        paddingBottom: 40,
     },
-    placeholderText: {
-        fontSize: 16,
-        color: '#888888',
-        marginBottom: 20,
+    header: {
+        alignItems: 'center',
+        marginBottom: 32,
+    },
+    title: {
+        fontSize: 28,
+        color: '#ffffff',
+        fontWeight: '600',
+        marginBottom: 24,
+    },
+    profileSection: {
+        alignItems: 'center',
+    },
+    imageContainer: {
+        position: 'relative',
+        marginBottom: 12,
     },
     profileImage: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        marginBottom: 20,
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        borderWidth: 3,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
     },
-    button: {
-        backgroundColor: '#007BFF',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 25,
-        alignItems: 'center',
-        marginBottom: 20,
+    editIconContainer: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#155e75',
+        padding: 8,
+        borderRadius: 20,
+        borderWidth: 3,
+        borderColor: '#083344',
     },
-    saveButton: {
-        backgroundColor: '#007BFF',
-        paddingVertical: 12,
-        paddingHorizontal: 20,
-        borderRadius: 25,
-        alignItems: 'center',
-    },
-    buttonText: {
-        color: '#FFFFFF',
+    emailText: {
+        color: '#94a3b8',
         fontSize: 16,
+        marginTop: 8,
+    },
+    formContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    inputGroup: {
+        marginBottom: 16,
+    },
+    inputLabel: {
+        color: '#ffffff',
+        fontSize: 14,
+        marginBottom: 8,
+        fontWeight: '500',
     },
     input: {
-        height: 40,
-        borderColor: '#ccc',
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
         borderWidth: 1,
-        borderRadius: 5,
-        paddingHorizontal: 10,
-        width: '100%',
-        marginBottom: 15,
+        borderColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 8,
+        padding: 12,
+        color: '#ffffff',
+        fontSize: 16,
+    },
+    buttonContainer: {
+        gap: 12,
+    },
+    saveButton: {
+        backgroundColor: '#155e75',
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+    },
+    cancelButton: {
+        backgroundColor: 'transparent',
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    buttonText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    cancelButtonText: {
+        color: '#94a3b8',
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

@@ -3,12 +3,13 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'reac
 import { useRouter } from 'expo-router';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
 import { auth } from '../../config/firebaseConfig';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const Feedback = () => {
     const [message, setMessage] = useState('');
     const [userName, setUserName] = useState<string | null>(null);
     const router = useRouter();
-    const db = getFirestore(); 
+    const db = getFirestore();
 
     useEffect(() => {
         const fetchUserName = () => {
@@ -40,7 +41,7 @@ const Feedback = () => {
                 });
                 Alert.alert('Success', 'Feedback submitted successfully.');
                 setMessage('');
-                router.push('/home'); // Navigate back to the Profile screen
+                router.push('/home'); 
             } else {
                 Alert.alert('Error', 'User is not authenticated.');
             }
@@ -52,62 +53,90 @@ const Feedback = () => {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Feedback</Text>
-            {userName && <Text style={styles.userName}>Logged in as: {userName}</Text>}
-            <TextInput
-                style={styles.input}
-                placeholder="Enter your message"
-                value={message}
-                onChangeText={setMessage}
-                multiline
-            />
-            <TouchableOpacity style={styles.button} onPress={handleSubmit}>
-                <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
-        </View>
+        <LinearGradient
+            colors={['#083344', '#094155', '#0a4f66']}
+            style={styles.container}
+        >
+            <View style={styles.content}>
+                <View style={styles.header}>
+                    <Text style={styles.title}>Feedback</Text>
+                    {userName && <Text style={styles.userName}>Logged in as: {userName}</Text>}
+                </View>
+
+                <View style={styles.inputContainer}>
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Enter your feedback message"
+                        placeholderTextColor="#94a3b8"
+                        value={message}
+                        onChangeText={setMessage}
+                        multiline
+                    />
+                </View>
+
+                <View style={styles.buttonContainer}>
+                    <TouchableOpacity style={styles.button} onPress={handleSubmit}>
+                        <Text style={styles.buttonText}>Submit Feedback</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </LinearGradient>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: 24,
+        paddingTop: 100,
+        paddingBottom: 40,
+    },
+    header: {
         alignItems: 'center',
-        padding: 16,
-        backgroundColor: '#f9f9f9',
+        marginBottom: 32,
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
+        fontSize: 28,
+        color: '#ffffff',
+        fontWeight: '600',
+        marginBottom: 12,
     },
     userName: {
         fontSize: 16,
-        color: '#555',
+        color: '#94a3b8',
         marginBottom: 20,
     },
-    input: {
-        height: 150,
-        borderColor: '#ccc',
+    inputContainer: {
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
+        borderRadius: 12,
         borderWidth: 1,
-        borderRadius: 5,
-        paddingHorizontal: 10,
-        width: '100%',
-        marginBottom: 15,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        marginBottom: 32,
+    },
+    input: {
+        height: 200,
+        padding: 16,
+        color: '#ffffff',
+        fontSize: 16,
         textAlignVertical: 'top',
     },
+    buttonContainer: {
+        gap: 16,
+    },
     button: {
-        backgroundColor: '#007bff',
-        padding: 12,
-        borderRadius: 5,
-        width: '80%',
+        backgroundColor: '#155e75',
+        paddingVertical: 16,
+        borderRadius: 12,
+        width: '100%',
         alignItems: 'center',
     },
     buttonText: {
-        color: '#fff',
-        textAlign: 'center',
+        color: '#ffffff',
         fontSize: 16,
+        fontWeight: '600',
     },
 });
 
