@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../config/firebaseConfig';
@@ -10,8 +10,15 @@ export default function Login() {
     const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleLogin = async () => {
+        if (!email || !password) {
+            Alert.alert('Error', 'Please fill in all fields');
+            return;
+        }
+
+        setIsLoading(true);
         try {
             await signInWithEmailAndPassword(auth, email, password);
             router.push("/home");
@@ -31,6 +38,8 @@ export default function Login() {
             } else {
                 Alert.alert('Login Error', 'An unknown error occurred.');
             }
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -45,34 +54,47 @@ export default function Login() {
 
                 <View style={styles.inputContainer}>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isLoading && styles.inputDisabled]}
                         placeholder="Email"
                         placeholderTextColor="#94a3b8"
                         value={email}
                         onChangeText={setEmail}
                         autoCapitalize="none"
+                        editable={!isLoading}
                     />
 
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, isLoading && styles.inputDisabled]}
                         placeholder="Password"
                         placeholderTextColor="#94a3b8"
                         secureTextEntry
                         value={password}
                         onChangeText={setPassword}
+                        editable={!isLoading}
                     />
                 </View>
 
-                <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-                    <Text style={styles.buttonText}>Login</Text>
+                <TouchableOpacity 
+                    style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
+                    onPress={handleLogin}
+                    disabled={isLoading}
+                >
+                    {isLoading ? (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="small" color="#ffffff" />
+                            <Text style={styles.loadingText}>Logging in...</Text>
+                        </View>
+                    ) : (
+                        <Text style={styles.buttonText}>Login</Text>
+                    )}
                 </TouchableOpacity>
 
                 <View style={styles.signupContainer}>
                     <Text style={styles.signupText}>
                         Don't have an account?{' '}
                         <Text 
-                            style={styles.signupLink}
-                            onPress={() => router.push('/signup')}
+                            style={[styles.signupLink, isLoading && styles.linkDisabled]}
+                            onPress={() => !isLoading && router.push('/signup')}
                         >
                             Sign up
                         </Text>
@@ -148,5 +170,25 @@ const styles = StyleSheet.create({
     signupLink: {
         color: '#ffffff',
         textDecorationLine: 'underline',
+    },
+    loadingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+    },
+    loadingText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    inputDisabled: {
+        opacity: 0.7,
+    },
+    loginButtonDisabled: {
+        opacity: 0.7,
+    },
+    linkDisabled: {
+        opacity: 0.7,
     },
 });
