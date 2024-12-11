@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Text, ActivityIndicator, Alert, ScrollView, Button } from 'react-native';
+import { View, StyleSheet, Text, ActivityIndicator, Alert, TouchableOpacity } from 'react-native';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type UserLocation = {
     latitude: number;
@@ -145,90 +146,129 @@ export default function MapScreen() {
     };
 
     return (
-        <View style={styles.container}>
+        <LinearGradient
+            colors={['#083344', '#094155', '#0a4f66']}
+            style={styles.container}
+        >
             {loading ? (
-                <ActivityIndicator size="large" color="#0000ff" />
+                <ActivityIndicator size="large" color="#ffffff" />
             ) : location ? (
-                <>
-                    <MapView
-                        provider={PROVIDER_GOOGLE}
-                        style={styles.map}
-                        region={{
-                            latitude: location.latitude,
-                            longitude: location.longitude,
-                            latitudeDelta: 0.0922,
-                            longitudeDelta: 0.0421,
-                        }}
-                        onLongPress={(e: any) => {
-                            const { latitude, longitude } = e.nativeEvent.coordinate;
-                            setSetPoint({ latitude, longitude, timestamp: new Date().toLocaleString() });
-                            Alert.alert('Set Point', 'A new set point has been created.');
-                        }}>
-                        {setPoint && (
-                            <Marker
-                                coordinate={{
-                                    latitude: setPoint.latitude,
-                                    longitude: setPoint.longitude,
-                                }}
-                                title="Set Point"
-                                description="Custom set point location"
-                            />
-                        )}
-                        {setPoint && userRadiusMeters && (
-                            <Circle
-                                center={{
-                                    latitude: setPoint.latitude,
-                                    longitude: setPoint.longitude,
-                                }}
-                                radius={userRadiusMeters}
-                                strokeColor="rgba(255, 0, 0, 0.5)"
-                                fillColor="rgba(255, 0, 0, 0.1)"
-                            />
-                        )}
-                    </MapView>
-                    <ScrollView style={styles.logContainer}>
-                        <View style={styles.buttonContainer}>
-                            <Button title="Set Radius to 100 Meters" onPress={() => setMapLongPressHandler()} />
-                        </View>
-                        <View style={styles.buttonContainer}>
-                            <Button title="View All Logs" onPress={handleViewLogs} />
-                        </View>
-                    </ScrollView>
-                </>
+                <View style={styles.content}>
+                    <Text style={styles.title}>Location Tracker</Text>
+                    
+                    <View style={styles.mapContainer}>
+                        <MapView
+                            provider={PROVIDER_GOOGLE}
+                            style={styles.map}
+                            region={{
+                                latitude: location.latitude,
+                                longitude: location.longitude,
+                                latitudeDelta: 0.0922,
+                                longitudeDelta: 0.0421,
+                            }}
+                            onLongPress={(e: any) => {
+                                const { latitude, longitude } = e.nativeEvent.coordinate;
+                                setSetPoint({ latitude, longitude, timestamp: new Date().toLocaleString() });
+                                Alert.alert('Set Point', 'A new set point has been created.');
+                            }}>
+                            {setPoint && (
+                                <Marker
+                                    coordinate={{
+                                        latitude: setPoint.latitude,
+                                        longitude: setPoint.longitude,
+                                    }}
+                                    title="Set Point"
+                                    description="Custom set point location"
+                                />
+                            )}
+                            {setPoint && userRadiusMeters && (
+                                <Circle
+                                    center={{
+                                        latitude: setPoint.latitude,
+                                        longitude: setPoint.longitude,
+                                    }}
+                                    radius={userRadiusMeters}
+                                    strokeColor="rgba(255, 0, 0, 0.5)"
+                                    fillColor="rgba(255, 0, 0, 0.1)"
+                                />
+                            )}
+                        </MapView>
+                    </View>
+
+                    <View style={styles.controlsContainer}>
+                        <TouchableOpacity 
+                            style={styles.button}
+                            onPress={() => setMapLongPressHandler()}
+                        >
+                            <Text style={styles.buttonText}>Set Radius to 100 Meters</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity 
+                            style={styles.button}
+                            onPress={handleViewLogs}
+                        >
+                            <Text style={styles.buttonText}>View Location History</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             ) : (
-                <Text>Location permission denied or unavailable</Text>
+                <View style={styles.errorContainer}>
+                    <Text style={styles.errorText}>Location permission denied or unavailable</Text>
+                </View>
             )}
-        </View>
+        </LinearGradient>
     );
 }
 
 const styles = StyleSheet.create({
-    buttonContainer: {
-        marginVertical: 10,
-    },
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
+    },
+    content: {
+        flex: 1,
+        paddingTop: 60,
+        paddingHorizontal: 24,
+    },
+    title: {
+        fontSize: 28,
+        color: '#ffffff',
+        fontWeight: '600',
+        marginBottom: 24,
+        textAlign: 'center',
+    },
+    mapContainer: {
+        height: '70%',
+        borderRadius: 12,
+        overflow: 'hidden',
+        marginBottom: 24,
     },
     map: {
         width: '100%',
-        height: '80%',
+        height: '100%',
     },
-    logContainer: {
-        width: '100%',
-        height: '40%',
-        backgroundColor: '#2E4156',
-        padding: 10,
+    controlsContainer: {
+        gap: 16,
     },
-    logEntry: {
-        marginBottom: 10,
-        padding: 10,
-        backgroundColor: '#1A2D42',
-        borderRadius: 8,
+    button: {
+        backgroundColor: '#155e75',
+        paddingVertical: 16,
+        borderRadius: 12,
+        alignItems: 'center',
     },
-    logText: {
-        color: '#C0C8CA',
-        fontSize: 14,
+    buttonText: {
+        color: '#ffffff',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 24,
+    },
+    errorText: {
+        color: '#ffffff',
+        fontSize: 16,
+        textAlign: 'center',
     },
 });

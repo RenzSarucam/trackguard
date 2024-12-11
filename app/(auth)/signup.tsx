@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { setDoc, doc } from 'firebase/firestore';
 import { auth, db } from '../../config/firebaseConfig';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const SignUp = () => {
     const [firstName, setFirstName] = useState('');
@@ -66,112 +67,193 @@ const SignUp = () => {
     };
 
     return (
-        <ScrollView contentContainerStyle={styles.container}>
-            <Text style={styles.title}>Sign Up</Text>
+        <LinearGradient
+            colors={['#083344', '#094155', '#0a4f66']}
+            style={styles.container}
+        >
+            <ScrollView 
+                contentContainerStyle={styles.content}
+                showsVerticalScrollIndicator={false}
+            >
+                <Text style={styles.title}>Create Account</Text>
+                <Text style={styles.subtitle}>Fill in your details to get started</Text>
 
-            <TextInput
-                style={styles.input}
-                placeholder="First Name"
-                value={firstName}
-                onChangeText={setFirstName}
-            />
+                <View style={styles.inputContainer}>
+                    <View style={styles.inputGroup}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="First Name"
+                            placeholderTextColor="#94a3b8"
+                            value={firstName}
+                            onChangeText={setFirstName}
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Last Name"
+                            placeholderTextColor="#94a3b8"
+                            value={lastName}
+                            onChangeText={setLastName}
+                        />
+                    </View>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Last Name"
-                value={lastName}
-                onChangeText={setLastName}
-            />
+                    <View style={styles.inputGroup}>
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Age"
+                            placeholderTextColor="#94a3b8"
+                            value={age}
+                            onChangeText={setAge}
+                            keyboardType="numeric"
+                        />
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Gender"
+                            placeholderTextColor="#94a3b8"
+                            value={gender}
+                            onChangeText={setGender}
+                        />
+                    </View>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Age"
-                value={age}
-                onChangeText={setAge}
-                keyboardType="numeric"
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Address"
+                        placeholderTextColor="#94a3b8"
+                        value={address}
+                        onChangeText={setAddress}
+                    />
 
-            <TextInput
-                style={styles.input}
-                placeholder="Gender"
-                value={gender}
-                onChangeText={setGender}
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Contact Number"
+                        placeholderTextColor="#94a3b8"
+                        value={contactNumber}
+                        onChangeText={setContactNumber}
+                        keyboardType="phone-pad"
+                    />
 
-            <TextInput
-                style={styles.input}
-                placeholder="Address"
-                value={address}
-                onChangeText={setAddress}
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Relative's Contact Number"
+                        placeholderTextColor="#94a3b8"
+                        value={relativeContactNumber}
+                        onChangeText={setRelativeContactNumber}
+                        keyboardType="phone-pad"
+                    />
 
-            <TextInput
-                style={styles.input}
-                placeholder="Contact Number"
-                value={contactNumber}
-                onChangeText={setContactNumber}
-                keyboardType="phone-pad"
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Email"
+                        placeholderTextColor="#94a3b8"
+                        value={email}
+                        onChangeText={setEmail}
+                        keyboardType="email-address"
+                        autoCapitalize="none"
+                    />
 
-            <TextInput
-                style={styles.input}
-                placeholder="Relative's Contact Number"
-                value={relativeContactNumber}
-                onChangeText={setRelativeContactNumber}
-                keyboardType="phone-pad"
-            />
+                    <TextInput
+                        style={styles.input}
+                        placeholder="Password"
+                        placeholderTextColor="#94a3b8"
+                        secureTextEntry
+                        value={password}
+                        onChangeText={setPassword}
+                    />
+                </View>
 
-            <TextInput
-                style={styles.input}
-                placeholder="Email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none" // To avoid capitalizing the first letter
-            />
+                {loading ? (
+                    <ActivityIndicator size="large" color="#ffffff" style={styles.loadingIndicator} />
+                ) : (
+                    <TouchableOpacity style={styles.signupButton} onPress={handleSubmit}>
+                        <Text style={styles.buttonText}>Create Account</Text>
+                    </TouchableOpacity>
+                )}
 
-            <TextInput
-                style={styles.input}
-                placeholder="Password"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-            />
-
-            {loading ? (
-                <ActivityIndicator size="large" color="#0e4483" style={styles.loadingIndicator} />
-            ) : (
-                <Button title="Sign Up" onPress={handleSubmit} color="#0e4483" />
-            )}
-        </ScrollView>
+                <View style={styles.loginContainer}>
+                    <Text style={styles.loginText}>
+                        Already have an account?{' '}
+                        <Text 
+                            style={styles.loginLink}
+                            onPress={() => router.push('/login')}
+                        >
+                            Login
+                        </Text>
+                    </Text>
+                </View>
+            </ScrollView>
+        </LinearGradient>
     );
 };
 
-// Styling for the form
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+    },
+    content: {
         flexGrow: 1,
-        padding: 20,
-        justifyContent: 'center',
-        backgroundColor: '#ffffff', // Added background color for better readability
+        paddingHorizontal: 24,
+        paddingTop: 100,
+        paddingBottom: 40,
     },
     title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
+        fontSize: 28,
+        color: '#ffffff',
+        marginBottom: 12,
+        fontWeight: '600',
         textAlign: 'center',
-        color: '#0e4483', // Added title color to match the theme
+    },
+    subtitle: {
+        fontSize: 16,
+        color: '#94a3b8',
+        marginBottom: 40,
+        textAlign: 'center',
+    },
+    inputContainer: {
+        width: '100%',
+        gap: 16,
+        marginBottom: 24,
+    },
+    inputGroup: {
+        flexDirection: 'row',
+        gap: 16,
     },
     input: {
-        height: 50,
-        borderColor: '#ccc',
+        flex: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.1)',
         borderWidth: 1,
-        borderRadius: 5,
-        paddingHorizontal: 10,
-        marginBottom: 15,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        color: '#ffffff',
+        padding: 16,
+        borderRadius: 12,
+        fontSize: 16,
+    },
+    signupButton: {
+        backgroundColor: '#155e75',
+        paddingVertical: 16,
+        borderRadius: 12,
+        width: '100%',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    buttonText: {
+        color: '#ffffff',
+        fontSize: 18,
+        fontWeight: '600',
     },
     loadingIndicator: {
-        marginVertical: 20, // Added margin for better spacing
+        marginVertical: 20,
+    },
+    loginContainer: {
+        paddingVertical: 16,
+        width: '100%',
+        alignItems: 'center',
+    },
+    loginText: {
+        color: '#94a3b8',
+        fontSize: 16,
+    },
+    loginLink: {
+        color: '#ffffff',
+        textDecorationLine: 'underline',
     },
 });
 
