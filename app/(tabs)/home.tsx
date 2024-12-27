@@ -1,4 +1,3 @@
-// app/(tabs)/home.tsx
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -9,9 +8,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 const Home = () => {
     const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
-    const [userName, setUserName] = useState<string>(''); // State for the user's name
+    const [userName, setUserName] = useState<string>('User'); // Default username
     const router = useRouter();
-    const [locationLogs, setLocationLogs] = useState<{ latitude: number; longitude: number; timestamp: string; }[]>([]); // Hook for location logs
+    const [locationLogs, setLocationLogs] = useState<{ latitude: number; longitude: number; timestamp: string; }[]>([]);
 
     useEffect(() => {
         const userId = auth.currentUser?.uid;
@@ -23,38 +22,42 @@ const Home = () => {
         const db = getDatabase();
         const userRef = ref(db, 'users/' + userId);
 
-        // Set up user data listener
-        const userUnsubscribe = onValue(userRef, (snapshot) => {
+        // Listen to user data changes
+        const unsubscribeUser = onValue(userRef, (snapshot) => {
             const userData = snapshot.val();
             if (userData) {
                 setProfileImageUrl(userData.profilePic || null);
                 setUserName(`${userData.firstName} ${userData.lastName}`.trim());
+                setLocationLogs(userData.locationLogs || []); // Load existing location logs
             }
         });
 
-        // Set up location watcher
+        // Location tracking setup
         let locationWatcher: Location.LocationSubscription | null = null;
         const setupLocationWatcher = async () => {
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert("Permission Denied", "Location access is required.");
+                return;
+            }
+
             locationWatcher = await Location.watchPositionAsync(
-                { 
-                    accuracy: Location.Accuracy.High, 
-                    timeInterval: 5000, 
-                    distanceInterval: 1 
+                {
+                    accuracy: Location.Accuracy.High,
+                    timeInterval: 5000,
+                    distanceInterval: 1
                 },
                 (location) => {
-                    const userLocation = {
+                    const newLog = {
                         latitude: location.coords.latitude,
                         longitude: location.coords.longitude,
                         timestamp: new Date().toLocaleString(),
                     };
 
-                    setLocationLogs(prevLogs => {
-                        const updatedLogs = [...prevLogs, userLocation];
-                        // Save to Firebase
+                    setLocationLogs((prevLogs) => {
+                        const updatedLogs = [...prevLogs, newLog];
                         const locationRef = ref(db, `users/${userId}/locationLogs`);
-                        set(locationRef, updatedLogs).catch((error) => {
-                            console.error('Error saving location:', error);
-                        });
+                        set(locationRef, updatedLogs).catch(console.error);
                         return updatedLogs;
                     });
                 }
@@ -64,30 +67,53 @@ const Home = () => {
         setupLocationWatcher();
 
         return () => {
-            userUnsubscribe();
-            if (locationWatcher) {
-                locationWatcher.remove();
-            }
+            unsubscribeUser();
+            if (locationWatcher) locationWatcher.remove();
         };
-    }, [router]); 
+    }, [router]);
 
-    const handleEditProfile = () => {
-        router.push("/edit-profile");
-    };
+    const handleEditProfile = () => router.push("/edit-profile");
 
-    const handleSendReport = () => {
-        Alert.alert('Report Sent', 'Your location has been sent to the police.');
+    const handleSendReport = async () => {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            Alert.alert('Error', 'User not authenticated. Please log in.');
+            router.push("/(auth)/login");
+            return;
+        }
+
+        const db = getDatabase();
+        const reportRef = ref(db, `reports/${userId}/${Date.now()}`);
+
+        try {
+            const lastLog = locationLogs[locationLogs.length - 1];
+            if (!lastLog) {
+                Alert.alert('Error', 'No location data available to send.');
+                return;
+            }
+
+            const reportData = {
+                reportId: `${userId}_${Date.now()}`,
+                userId,
+                location: {
+                    latitude: lastLog.latitude,
+                    longitude: lastLog.longitude,
+                },
+                timestamp: new Date().toISOString(),
+                message: "Emergency report sent.",
+            };
+
+            await set(reportRef, reportData);
+            Alert.alert('Report Sent', 'Your location has been sent to the authorities.');
+        } catch (error) {
+            Alert.alert('Error', 'Failed to send report.');
+            console.error(error);
+        }
     };
 
     return (
-        <LinearGradient
-            colors={['#083344', '#094155', '#0a4f66']}
-            style={styles.container}
-        >
-            <ScrollView 
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
-            >
+        <LinearGradient colors={['#083344', '#094155', '#0a4f66']} style={styles.container}>
+            <ScrollView contentContainerStyle={styles.content}>
                 <View style={styles.header}>
                     <Text style={styles.title}>TrackGuard</Text>
                     <View style={styles.profileContainer}>
@@ -95,7 +121,7 @@ const Home = () => {
                             source={profileImageUrl ? { uri: profileImageUrl } : require('../../assets/images/user.png')}
                             style={styles.profilePhoto}
                         />
-                        <Text style={styles.userName}>{userName || "User Name"}</Text>
+                        <Text style={styles.userName}>{userName}</Text>
                     </View>
                 </View>
 
@@ -103,30 +129,28 @@ const Home = () => {
                     <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
                         <Text style={styles.buttonText}>Edit Profile</Text>
                     </TouchableOpacity>
-
                     <TouchableOpacity style={[styles.button, styles.emergencyButton]} onPress={handleSendReport}>
-                        <Text style={styles.buttonText}>Send Report to Police</Text>
+                        <Text style={styles.buttonText}>Send Report</Text>
                     </TouchableOpacity>
                 </View>
 
+                {/* Location History Section */}
                 <View style={styles.logsContainer}>
                     <Text style={styles.logsTitle}>Location History</Text>
-                    <View style={styles.messageBox}>
-                        <ScrollView showsVerticalScrollIndicator={false}>
-                            {locationLogs.length > 0 ? (
-                                locationLogs.map((log, index) => (
-                                    <View key={index} style={styles.logItem}>
-                                        <Text style={styles.logText}>
-                                            Location: Lat {log.latitude.toFixed(6)}, Lon {log.longitude.toFixed(6)}
-                                        </Text>
-                                        <Text style={styles.timeText}>{log.timestamp}</Text>
-                                    </View>
-                                ))
-                            ) : (
-                                <Text style={styles.messageText}>No location data available.</Text>
-                            )}
-                        </ScrollView>
-                    </View>
+                    <ScrollView style={styles.logsList}>
+                        {locationLogs.length > 0 ? (
+                            locationLogs.map((log, index) => (
+                                <View key={index} style={styles.logItem}>
+                                    <Text style={styles.logText}>
+                                        Latitude: {log.latitude.toFixed(6)}, Longitude: {log.longitude.toFixed(6)}
+                                    </Text>
+                                    <Text style={styles.timestamp}>{log.timestamp}</Text>
+                                </View>
+                            ))
+                        ) : (
+                            <Text style={styles.noLogsText}>No location history available.</Text>
+                        )}
+                    </ScrollView>
                 </View>
             </ScrollView>
         </LinearGradient>
@@ -134,97 +158,24 @@ const Home = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    content: {
-        flexGrow: 1,
-        paddingHorizontal: 24,
-        paddingTop: 60,
-        paddingBottom: 40,
-    },
-    header: {
-        alignItems: 'center',
-        marginBottom: 32,
-    },
-    title: {
-        fontSize: 28,
-        color: '#ffffff',
-        fontWeight: '600',
-        marginBottom: 24,
-    },
-    profileContainer: {
-        alignItems: 'center',
-    },
-    profilePhoto: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        borderWidth: 3,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        marginBottom: 12,
-    },
-    userName: {
-        fontSize: 20,
-        color: '#ffffff',
-        fontWeight: '600',
-    },
-    buttonContainer: {
-        gap: 16,
-        marginBottom: 32,
-    },
-    button: {
-        backgroundColor: '#155e75',
-        paddingVertical: 16,
-        borderRadius: 12,
-        width: '100%',
-        alignItems: 'center',
-    },
-    emergencyButton: {
-        backgroundColor: '#dc2626',
-    },
-    buttonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    logsContainer: {
-        flex: 1,
-    },
-    logsTitle: {
-        fontSize: 18,
-        color: '#ffffff',
-        marginBottom: 12,
-        fontWeight: '600',
-    },
-    messageBox: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        padding: 16,
-        height: 300,
-    },
-    logItem: {
-        marginBottom: 16,
-        padding: 12,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        borderRadius: 8,
-    },
-    logText: {
-        color: '#ffffff',
-        fontSize: 14,
-        marginBottom: 4,
-    },
-    timeText: {
-        color: '#94a3b8',
-        fontSize: 12,
-    },
-    messageText: {
-        color: '#94a3b8',
-        fontSize: 16,
-        textAlign: 'center',
-    },
+    container: { flex: 1 },
+    content: { flexGrow: 1, paddingHorizontal: 25, paddingVertical: 40 },
+    header: { alignItems: 'center', marginBottom: 24 },
+    title: { fontSize: 40, color: '#ffffff', fontWeight: '600' },
+    profileContainer: { alignItems: 'center' },
+    profilePhoto: { width: 100, height: 100, borderRadius: 50, marginBottom: 20          },
+    userName: { fontSize: 20, color: '#ffffff' },
+    buttonContainer: { gap: 16 },
+    button: { backgroundColor: '#155e75', padding: 16, borderRadius: 12, alignItems: 'center' },
+    emergencyButton: { backgroundColor: '#dc2626' },
+    buttonText: { color: '#ffffff', fontWeight: '600' },
+    logsContainer: { marginTop: 32 },
+    logsTitle: { fontSize: 18, color: '#ffffff', marginBottom: 12 },
+    logsList: { maxHeight: 300 },
+    logItem: { padding: 8, borderBottomWidth: 1, borderBottomColor: '#ddd' },
+    logText: { fontSize: 14, color: '#ffffff' },
+    timestamp: { fontSize: 12, color: '#a9a9a9' },
+    noLogsText: { fontSize: 14, color: '#ffffff', textAlign: 'center' },
 });
 
 export default Home;
